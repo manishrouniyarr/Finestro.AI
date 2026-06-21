@@ -25,12 +25,11 @@ const SignIn = () => {
         <div className="relative hidden bg-muted lg:block -mt-3">
           <div className="absolute inset-0 flex flex-col items-end justify-end pt-8 pl-8">
             <div className="w-full max-w-3xl mx-0 pr-5">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Finestro.AI – The Financial Companion That Works While You Sleep.
-              </h1>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+  Finestro.AI – The Financial Companion That Works While You Sleep.
+</h1>
               <p className="mt-4 text-gray-600 dark:text-muted-foreground">
-                Simplify your money management with AI-driven insights, automated
-                reporting, effortless CSV uploads, and smart recurring transactions.
+                Simplify your money management with AI-driven insights, automated reports, effortless CSV imports, and smart recurring transactions.
               </p>
             </div>
             <div className="relative max-w-3xl h-full w-full overflow-hidden mt-3">
