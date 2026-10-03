@@ -15,10 +15,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
-import { Loader } from "lucide-react";
+import { Eye, EyeOff, Loader } from "lucide-react";
 import { useLoginMutation } from "@/features/auth/authAPI";
 import { useAppDispatch } from "@/app/hook";
 import { setCredentials } from "@/features/auth/authSlice";
+import { useState } from "react";
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),
@@ -34,6 +35,7 @@ const SignInForm = ({
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [login, { isLoading }] = useLoginMutation();
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -95,8 +97,27 @@ const SignInForm = ({
                 <FormItem>
                   <FormLabel className="!font-normal">Password</FormLabel>
                   <FormControl>
-                    <Input placeholder="******" type="password" {...field} />
-                  </FormControl>
+  <div className="relative">
+    <Input
+      placeholder="******"
+      type={showPassword ? "text" : "password"}
+      className="pr-10"
+      {...field}
+    />
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+      aria-label={showPassword ? "Hide password" : "Show password"}
+    >
+      {showPassword ? (
+        <EyeOff className="h-4 w-4" />
+      ) : (
+        <Eye className="h-4 w-4" />
+      )}
+    </button>
+  </div>
+</FormControl>
                   <FormMessage />
                 </FormItem>
               )}

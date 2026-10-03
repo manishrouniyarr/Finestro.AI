@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { Loader } from "lucide-react";
+import { Eye, EyeOff, Loader } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useRegisterMutation } from "@/features/auth/authAPI";
+import { useState } from "react";
 
 const schema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -28,6 +29,7 @@ type FormValues = z.infer<typeof schema>;
 const SignUpForm = () => {
   const navigate = useNavigate();
   const [register, { isLoading }] = useRegisterMutation();
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -93,8 +95,27 @@ const SignUpForm = () => {
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input type="password" {...field} />
-                </FormControl>
+  <div className="relative">
+    <Input
+      type={showPassword ? "text" : "password"}
+      className="pr-10"
+      {...field}
+    />
+
+    <button
+      type="button"
+      onClick={() => setShowPassword((prev) => !prev)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+      aria-label={showPassword ? "Hide password" : "Show password"}
+    >
+      {showPassword ? (
+        <EyeOff className="h-[18px] w-[18px]" strokeWidth={1.8} />
+      ) : (
+        <Eye className="h-[18px] w-[18px]" strokeWidth={1.8} />
+      )}
+    </button>
+  </div>
+</FormControl>
                 <FormMessage />
               </FormItem>
             )}
