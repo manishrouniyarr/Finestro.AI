@@ -19,3 +19,4 @@ Finestro.AI is a full-stack finance management application built with the MERN s
 - Bulk Delete and Duplicate Transactions
 - Profile Photo Upload (Cloudinary)
 - Built with MERN Stack: Node.js, MongoDB, React, TypeScript
+
