@@ -29,7 +29,7 @@ const SignIn = () => {
   Finestro.AI – The Financial Companion That Works While You Sleep.
 </h1>
               <p className="mt-4 text-gray-600 dark:text-muted-foreground">
-                Simplify your money management with AI-driven insights, automated reports, effortless CSV imports, and smart recurring transactions.
+                Simplify your money management with AI receipt scanning, analytics, automated reports, CSV imports, and recurring transactions.
               </p>
             </div>
             <div className="relative max-w-3xl h-full w-full overflow-hidden mt-3">

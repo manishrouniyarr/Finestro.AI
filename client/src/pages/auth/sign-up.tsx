@@ -29,7 +29,7 @@ const SignUp = () => {
                 Hi, I'm your AI-powered personal finance app, Finestro.AI!
               </h1>
               <p className="mt-4 text-gray-600 dark:text-muted-foreground">
-              Finestro.AI provides insights, monthly reports, CSV import, recurring transactions, all powered by advanced AI technology. 🚀
+              Finestro.AI scans receipts with AI and gives you analytics, monthly reports, CSV import and recurring transactions.
               </p>
             </div>
             <div className="relative max-w-3xl h-full w-full overflow-hidden mt-3">
