@@ -103,7 +103,7 @@ const TransactionForm = (props: {
     defaultValues: {
       title: "",
       amount: "",
-      type: _TRANSACTION_TYPE.INCOME,
+      type: _TRANSACTION_TYPE.EXPENSE,
       category: "",
       date: new Date(),
       paymentMethod: "",
@@ -216,7 +216,7 @@ const TransactionForm = (props: {
                   <FormLabel>Transaction Type</FormLabel>
                   <RadioGroup
                     onValueChange={field.onChange}
-                    defaultValue={field.value}
+                   value={field.value}
                     className="flex space-x-2"
                     disabled={isScanning}
                   >
@@ -453,7 +453,7 @@ const TransactionForm = (props: {
                     <FormLabel>Frequency</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value ?? undefined}
+                      value={field.value ?? undefined}
                       disabled={isScanning}
                     >
                       <FormControl className="w-full">
