@@ -19,7 +19,11 @@ import { Eye, EyeOff, Loader } from "lucide-react";
 import { useLoginMutation } from "@/features/auth/authAPI";
 import { useAppDispatch } from "@/app/hook";
 import { setCredentials } from "@/features/auth/authSlice";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+// Public demo account (intentionally visible). Create it once via Sign up on the live site.
+const DEMO_EMAIL = "demo@finestro.app";
+const DEMO_PASSWORD = "Demo@1234";
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),
@@ -36,10 +40,21 @@ const SignInForm = ({
   const navigate = useNavigate();
   const [login, { isLoading }] = useLoginMutation();
   const [showPassword, setShowPassword] = useState(false);
+  const [slow, setSlow] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
   });
+
+  // If login takes more than 3 s, the free server is probably waking up: tell the user.
+  useEffect(() => {
+    if (!isLoading) {
+      setSlow(false);
+      return;
+    }
+    const t = setTimeout(() => setSlow(true), 3000);
+    return () => clearTimeout(t);
+  }, [isLoading]);
 
   const onSubmit = (values: FormValues) => {
     login(values)
@@ -47,14 +62,18 @@ const SignInForm = ({
       .then((data) => {
         dispatch(setCredentials(data));
         toast.success("Login successful");
-        setTimeout(() => {
-          navigate(PROTECTED_ROUTES.OVERVIEW);
-        }, 1000);
+        navigate(PROTECTED_ROUTES.OVERVIEW);
       })
       .catch((error) => {
         console.log(error);
         toast.error(error.data?.message || "Failed to login");
       });
+  };
+
+  const loginAsDemo = () => {
+    form.setValue("email", DEMO_EMAIL);
+    form.setValue("password", DEMO_PASSWORD);
+    onSubmit({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
   };
 
   return (
@@ -79,10 +98,7 @@ const SignInForm = ({
                 <FormItem>
                   <FormLabel className="!font-normal">Email</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="finestro.ai@gmail.com"
-                      {...field}
-                    />
+                    <Input placeholder="finestro.ai@gmail.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -97,47 +113,66 @@ const SignInForm = ({
                 <FormItem>
                   <FormLabel className="!font-normal">Password</FormLabel>
                   <FormControl>
-  <div className="relative">
-    <Input
-      placeholder="******"
-      type={showPassword ? "text" : "password"}
-      className="pr-10"
-      {...field}
-    />
-    <button
-      type="button"
-      onClick={() => setShowPassword(!showPassword)}
-      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-      aria-label={showPassword ? "Hide password" : "Show password"}
-    >
-      {showPassword ? (
-        <EyeOff className="h-4 w-4" />
-      ) : (
-        <Eye className="h-4 w-4" />
-      )}
-    </button>
-  </div>
-</FormControl>
+                    <div className="relative">
+                      <Input
+                        placeholder="******"
+                        type={showPassword ? "text" : "password"}
+                        className="pr-10"
+                        {...field}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
-          <Button disabled={isLoading} type="submit" className="w-full"> {isLoading && <Loader className="h-4 w-4 animate-spin" />} Login </Button>
+
+          <div className="grid gap-3">
+            <Button disabled={isLoading} type="submit" className="w-full">
+              {isLoading && <Loader className="h-4 w-4 animate-spin" />} Login
+            </Button>
+            <Button
+              disabled={isLoading}
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={loginAsDemo}
+            >
+              Try demo account
+            </Button>
+          </div>
+
+          {slow ? (
+            <p className="text-center text-xs text-muted-foreground" role="status">
+              Waking up the server… this can take up to 30&nbsp;seconds.
+            </p>
+          ) : (
+            <p className="text-center text-xs text-muted-foreground">
+              Free server: first login may take up to 30&nbsp;seconds.
+            </p>
+          )}
         </div>
         <div className="text-center text-sm">
           Don&apos;t have an account?{" "}
-          <Link
-            to={AUTH_ROUTES.SIGN_UP}
-            className="underline underline-offset-4"
-          >
+          <Link to={AUTH_ROUTES.SIGN_UP} className="underline underline-offset-4">
             Sign up
           </Link>
         </div>
       </form>
     </Form>
-      
-
   );
 };
 
