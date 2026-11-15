@@ -261,15 +261,68 @@ export const bulkTransactionService = async (
   }
 };
 
+// ---------- Gemini resilience helpers ----------
+const FALLBACK_MODEL =
+  process.env.GEMINI_FALLBACK_MODEL || "gemini-3.1-flash-lite";
+const RETRYABLE_STATUS = new Set([429, 500, 503]);
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// 503 = Gemini overloaded, 429 = rate limit, 500 = transient server error
+const isRetryableGeminiError = (error: unknown): boolean => {
+  const err = error as { status?: number; code?: number; message?: string };
+  const status = err?.status ?? err?.code;
+  if (typeof status === "number" && RETRYABLE_STATUS.has(status)) return true;
+  return /UNAVAILABLE|RESOURCE_EXHAUSTED|overloaded|\b503\b|\b429\b/i.test(
+    err?.message ?? ""
+  );
+};
+
+const callGemini = (model: string, base64: string, mimeType: string) =>
+  genAI.models.generateContent({
+    model,
+    contents: [
+      createUserContent([
+        receiptPrompt,
+        createPartFromBase64(base64, mimeType),
+      ]),
+    ],
+    config: {
+      temperature: 0,
+      topP: 1,
+      responseMimeType: "application/json",
+    },
+  });
+
+// Try the main model twice (with backoff), then the fallback model once.
+const generateWithRetry = async (base64: string, mimeType: string) => {
+  const attempts = [genAIModel, genAIModel, FALLBACK_MODEL];
+  let lastError: unknown;
+
+  for (let i = 0; i < attempts.length; i++) {
+    try {
+      return await callGemini(attempts[i], base64, mimeType);
+    } catch (error) {
+      lastError = error;
+      console.error(
+        `[scan-receipt] attempt ${i + 1}/${attempts.length} (${attempts[i]}) failed:`,
+        (error as Error)?.message
+      );
+      // Permanent errors (bad key, model not found) -> don't retry
+      if (!isRetryableGeminiError(error)) break;
+      if (i < attempts.length - 1) await sleep(1000 * 2 ** i); // 1s, 2s
+    }
+  }
+  throw lastError;
+};
+
 export const scanReceiptService = async (
   file: Express.Multer.File | undefined
 ) => {
   if (!file) throw new BadRequestException("No file uploaded");
 
   try {
-    if (!file.path) throw new BadRequestException("failed to upload file");
-
-    console.log(file.path);
+    if (!file.path) throw new BadRequestException("Failed to upload file");
 
     const responseData = await axios.get(file.path, {
       responseType: "arraybuffer",
@@ -278,33 +331,23 @@ export const scanReceiptService = async (
 
     if (!base64String) throw new BadRequestException("Could not process file");
 
-    const result = await genAI.models.generateContent({
-      model: genAIModel,
-      contents: [
-        createUserContent([
-          receiptPrompt,
-          createPartFromBase64(base64String, file.mimetype),
-        ]),
-      ],
-      config: {
-        temperature: 0,
-        topP: 1,
-        responseMimeType: "application/json",
-      },
-    });
+    const result = await generateWithRetry(base64String, file.mimetype);
 
-    const response = result.text;
-    const cleanedText = response?.replace(/```(?:json)?\n?/g, "").trim();
+    const cleanedText = result.text?.replace(/```(?:json)?\n?/g, "").trim();
 
-    if (!cleanedText)
+    if (!cleanedText) {
       return {
-        error: "Could not read reciept  content",
+        error: "Could not read the receipt. Please try a clearer photo.",
       };
+    }
 
     const data = JSON.parse(cleanedText);
 
     if (!data.amount || !data.date) {
-      return { error: "Reciept missing required information" };
+      return {
+        error:
+          "Receipt is missing the amount or date. Please try a clearer photo.",
+      };
     }
 
     return {
@@ -318,6 +361,22 @@ export const scanReceiptService = async (
       receiptUrl: file.path,
     };
   } catch (error) {
-    return { error: "Reciept scanning  service unavailable" };
+    console.error("[scan-receipt] failed:", (error as Error)?.message);
+
+    if (isRetryableGeminiError(error)) {
+      return {
+        error:
+          "Receipt scanner is busy right now. Please try again in a minute.",
+      };
+    }
+    if (error instanceof SyntaxError) {
+      return {
+        error: "Could not read the receipt. Please try a clearer photo.",
+      };
+    }
+    return {
+      error:
+        "Receipt scanning failed. Please try again or enter it manually.",
+    };
   }
 };
