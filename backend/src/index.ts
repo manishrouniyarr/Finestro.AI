@@ -1,13 +1,11 @@
 import "dotenv/config";
 import "./config/passport.config";
-import express, { NextFunction, Request, Response } from "express";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import passport from "passport";
 import { Env } from "./config/env.config";
 import { HTTPSTATUS } from "./config/http.config";
 import { errorHandler } from "./middlewares/errorHandler.middleware";
-import { BadRequestException } from "./utils/app-error";
-import { asyncHandler } from "./middlewares/asyncHandler.middlerware";
 import connctDatabase from "./config/database.config";
 import authRoutes from "./routes/auth.route";
 import { passportAuthenticateJwt } from "./config/passport.config";
@@ -33,15 +31,14 @@ app.use(
   })
 );
 
-app.get(
-  "/",
-  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    throw new BadRequestException("This is a test error");
-    res.status(HTTPSTATUS.OK).json({
-      message: "Hello Subcribe to the channel",
-    });
-  })
-);
+// Health check: used by uptime monitors and to wake the free-tier instance
+app.get("/", (_req: Request, res: Response) => {
+  res.status(HTTPSTATUS.OK).json({
+    status: "ok",
+    service: "finestro-api",
+    uptime: Math.round(process.uptime()),
+  });
+});
 
 app.use(`${BASE_PATH}/auth`, authRoutes);
 app.use(`${BASE_PATH}/user`, passportAuthenticateJwt, userRoutes);

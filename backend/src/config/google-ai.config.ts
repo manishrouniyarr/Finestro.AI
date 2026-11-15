@@ -2,4 +2,5 @@ import { GoogleGenAI } from "@google/genai";
 import { Env } from "./env.config";
 
 export const genAI = new GoogleGenAI({ apiKey: Env.GEMINI_API_KEY });
-export const genAIModel = "gemini-2.0-flash";
+// Model name is configurable so a future model retirement doesn't need a code change.
+export const genAIModel = process.env.GEMINI_MODEL || "gemini-3.5-flash";
